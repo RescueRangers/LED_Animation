@@ -43,6 +43,7 @@ Bounce program9Button = Bounce(program9, 10);
 Bounce startButton = Bounce(BUTTON_PIN, 10);
 
 int analogWait = 0;
+int colorIntensity = 10;
 uint32_t color = strip.Color(10, 0, 0);
 uint32_t blank = strip.Color(0, 0, 0);
 bool isOffset = true;
@@ -106,6 +107,8 @@ void cycle(int pixels, int pixelOffset)
   fillPattern(pixels, pixelOffset);
   while (show)
   {
+    colorIntensity = analogRead(1) / 4;
+    color = strip.Color(colorIntensity, 0, 0);
     for (int j = 0; j < PIXEL_COUNT; j++)
     {
       uint32_t currentColor;
@@ -133,7 +136,8 @@ void cycle(int pixels, int pixelOffset)
   {
     for (int i = 0; i < (pixels + pixelOffset); i++)
     {
-      // strip.clear();
+      colorIntensity = analogRead(1) / 4;
+      color = strip.Color(colorIntensity, 0, 0);
       for (int j = 0; j < PIXEL_COUNT; j++)
       {
         uint32_t currentColor;
@@ -150,7 +154,6 @@ void cycle(int pixels, int pixelOffset)
       strip.show();
       shiftArray(pixels, pixelOffset);
 
-      // strip.clear();
       analogWait = analogRead(0) / 2;
       delay(analogWait);
     }
