@@ -42,17 +42,13 @@ Bounce program8Button = Bounce(program8, 10);
 Bounce program9Button = Bounce(program9, 10);
 Bounce startButton = Bounce(BUTTON_PIN, 10);
 
-bool oldState = HIGH;
 int analogWait = 0;
 uint32_t color = strip.Color(10, 0, 0);
 uint32_t blank = strip.Color(0, 0, 0);
 bool isOffset = true;
 bool isPixels = false;
 bool pattern[PIXEL_COUNT];
-int patternCopy[PIXEL_COUNT];
 int currentOffset = 0;
-int Pixels = 0;
-int PixelOffset = 0;
 bool show = true;
 
 void fillPattern(int pixels, int pixelOffset)
