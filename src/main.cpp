@@ -2,10 +2,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <Bounce.h>
 
-#define BUTTON_PIN 20 // Digital IO pin connected to the button.  This will be
-                      // driven with a pull-up resistor so the switch should
-                      // pull the pin to ground momentarily.  On a high -> low
-                      // transition the button press logic will execute.
+#define START_PIN 20
 
 #define program1 2
 #define program2 3
@@ -16,6 +13,8 @@
 #define program7 8
 #define program8 9
 #define program9 10
+#define PAUSE_PIN 11
+#define STOP_PIN 12
 
 #define PIXEL_PIN 19 // Digital IO pin connected to the NeoPixels.
 
@@ -30,7 +29,7 @@
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip), correct for neopixel stick
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// Deffine buttons used ffor program selection
+// Deffine buttons used for program selection
 Bounce program1Button = Bounce(program1, 10);
 Bounce program2Button = Bounce(program2, 10);
 Bounce program3Button = Bounce(program3, 10);
@@ -40,7 +39,9 @@ Bounce program6Button = Bounce(program6, 10);
 Bounce program7Button = Bounce(program7, 10);
 Bounce program8Button = Bounce(program8, 10);
 Bounce program9Button = Bounce(program9, 10);
-Bounce startButton = Bounce(BUTTON_PIN, 10);
+Bounce startButton = Bounce(START_PIN, 10);
+Bounce pauseButton = Bounce(PAUSE_PIN, 10);
+Bounce stopButton = Bounce(STOP_PIN, 10);
 
 int minDelay = 17;
 int analogWait = 0;
@@ -51,7 +52,9 @@ bool isPixels = false;
 bool pattern[PIXEL_COUNT];
 int currentOffset = 0;
 bool show = true;
+bool paused = false;
 
+// Fill the pattern array with pixels and pixel offset
 void fillPattern(int pixels, int pixelOffset)
 {
   for (int j = 0; j < strip.numPixels(); j += (pixels + pixelOffset))
@@ -67,6 +70,7 @@ void fillPattern(int pixels, int pixelOffset)
   }
 }
 
+// Shift the array by one frame depending on the pixels and pixel offset
 void shiftArray(int pixels, int pixelOffset)
 {
   int currentColor;
@@ -102,9 +106,12 @@ void shiftArray(int pixels, int pixelOffset)
   pattern[0] = currentColor;
 }
 
+// Cycle through the animation frames
 void cycle(int pixels, int pixelOffset)
 {
   fillPattern(pixels, pixelOffset);
+
+  // First show the pattern without starting the animation until the start button is pressed
   while (show)
   {
     int colorIntensity = 0;
@@ -138,7 +145,9 @@ void cycle(int pixels, int pixelOffset)
       }
     }
   }
-  while (true)
+
+  // Run the animation until it gets paused by user input
+  while (!paused)
   {
     for (int i = 0; i < (pixels + pixelOffset); i++)
     {
@@ -172,7 +181,34 @@ void cycle(int pixels, int pixelOffset)
       }
 
       analogWait = analogWait / 32;
+
+      if (pauseButton.update())
+      {
+        if (pauseButton.fallingEdge())
+        {
+          paused = true;
+        }
+      }
       delay(analogWait + minDelay);
+    }
+  }
+  while (paused)
+  {
+    if (pauseButton.update())
+    {
+      if (pauseButton.fallingEdge())
+      {
+        paused = false;
+      }
+    }
+    if (stopButton.update())
+    {
+      if (stopButton.fallingEdge())
+      {
+        paused = false;
+        show = true;
+        return;
+      }
     }
   }
 }
@@ -182,7 +218,7 @@ void setup()
   // put your setup code here, to run once:
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(START_PIN, INPUT_PULLUP);
   pinMode(program1, INPUT_PULLUP);
   pinMode(program2, INPUT_PULLUP);
   pinMode(program3, INPUT_PULLUP);
@@ -192,11 +228,12 @@ void setup()
   pinMode(program7, INPUT_PULLUP);
   pinMode(program8, INPUT_PULLUP);
   pinMode(program9, INPUT_PULLUP);
+  pinMode(PAUSE_PIN, INPUT_PULLUP);
 }
 
 void loop()
 {
-  // Get current button state.
+  // Check for the program to run
   if (program1Button.update())
   {
     if (program1Button.fallingEdge())
