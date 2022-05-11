@@ -12,12 +12,12 @@
 #define PROGRAM_PIN7 8
 #define PROGRAM_PIN8 9
 #define PROGRAM_PIN9 10
-#define PAUSE_PIN 11
+#define PAUSE_PIN 20
 #define STOP_PIN 12
 
 #define PIXEL_PIN 19 // Digital IO pin connected to the NeoPixels.
 
-#define PIXEL_COUNT 900
+#define PIXEL_COUNT 8
 
 // Parameter 1 = number of pixels in strip,  neopixel stick has 8
 // Parameter 2 = pin number (most are valid)
@@ -47,7 +47,7 @@ enum direction
   FORWARD,
   REVERSE
 };
-void ProgramComplete();
+
 class NeoPatterns : public Adafruit_NeoPixel
 {
 public:
@@ -59,27 +59,21 @@ public:
   unsigned long lastUpdate; // last update of position
 
   uint32_t Color1, Color2; // What colors are in use
-  uint16_t TotalSteps;     // total number of steps in the pattern
   uint16_t Index;          // current step within the pattern
 
   void (*OnComplete)(); // Callback on completion of pattern
 
   bool isOffset = true;
   bool isPixels = false;
-  bool *PatternPtr = new bool[TotalSteps];
+  bool *pattern_pointer;
   int currentOffset = 0;
   uint16_t pixel, pixelOffset;
-  uint32_t color;
-  uint32_t blank;
 
   // Constructor - calls base-class constructor to initialize strip
   NeoPatterns(uint16_t pixels, uint8_t pin, uint8_t type, void (*callback)())
       : Adafruit_NeoPixel(pixels, pin, type)
   {
-    TotalSteps = pixels;
-    PatternPtr = new bool[pixels];
-    color = Color(10, 0, 0);
-    blank = Color(0, 0, 0);
+    pattern_pointer = new bool[numPixels()];
     OnComplete = callback;
   }
 
@@ -92,7 +86,7 @@ public:
       switch (ActivePattern)
       {
       case PROGRAM1:
-        Cycle(36, 36);
+        Cycle(2, 2);
         break;
       case PROGRAM2:
         Cycle(48, 36);
@@ -124,50 +118,6 @@ public:
     }
   }
 
-  // Increment the Index and reset at the end
-  void Increment()
-  {
-    if (Direction == FORWARD)
-    {
-      Index++;
-      if (Index >= TotalSteps)
-      {
-        Index = 0;
-        if (OnComplete != NULL)
-        {
-          OnComplete(); // call the completion callback
-        }
-      }
-    }
-    else // Direction == REVERSE
-    {
-      --Index;
-      if (Index <= 0)
-      {
-        Index = TotalSteps - 1;
-        if (OnComplete != NULL)
-        {
-          OnComplete(); // call the completion callback
-        }
-      }
-    }
-  }
-
-  // Reverse pattern direction
-  void Reverse()
-  {
-    if (Direction == FORWARD)
-    {
-      Direction = REVERSE;
-      Index = TotalSteps - 1;
-    }
-    else
-    {
-      Direction = FORWARD;
-      Index = 0;
-    }
-  }
-
   void ShiftArray(int pixels, int pixelOffset)
   {
     int currentColor;
@@ -196,24 +146,24 @@ public:
       currentOffset++;
     }
 
-    for (int i = TotalSteps; i >= 1; i--)
+    for (int i = numPixels(); i >= 1; i--)
     {
-      PatternPtr[i] = PatternPtr[i - 1];
+      pattern_pointer[i] = pattern_pointer[i - 1];
     }
-    PatternPtr[0] = currentColor;
+    pattern_pointer[0] = currentColor;
   }
 
   void FillPattern(int pixels, int pixelOffset)
   {
-    for (int j = 0; j < TotalSteps; j += (pixels + pixelOffset))
+    for (int j = 0; j < numPixels(); j += (pixels + pixelOffset))
     {
       for (int i = 0; i < pixels; i++)
       {
-        PatternPtr[i + j] = 1;
+        pattern_pointer[i + j] = 1;
       }
       for (int i = 0; i < pixelOffset; i++)
       {
-        PatternPtr[i + j + pixels] = 0;
+        pattern_pointer[i + j + pixels] = 0;
       }
     }
   }
@@ -221,32 +171,29 @@ public:
   // Cycle through the animation frames
   void Cycle(int pixels, int pixelOffset)
   {
-    FillPattern(pixels, pixelOffset);
+    // FillPattern(pixels, pixelOffset);
 
     // First show the pattern without starting the animation until the start button is pressed
 
-    int colorIntensity = 0;
-    for (size_t i = 0; i < 32; i++)
-    {
-      colorIntensity += analogRead(1);
-    }
-
-    colorIntensity = ((colorIntensity / 32) >> 2) - 10;
-    color = Color(colorIntensity + 10, 0, 0);
-    for (int j = 0; j < TotalSteps; j++)
+    for (int j = 0; j < numPixels(); j++)
     {
       uint32_t currentColor;
-      if (PatternPtr[j % TotalSteps])
+      if (pattern_pointer[j % numPixels()])
       {
-        currentColor = color;
+        currentColor = Color1;
       }
       else
       {
-        currentColor = blank;
+        currentColor = Color2;
       }
       setPixelColor(j, currentColor);
     }
+    ShiftArray(pixels, pixelOffset);
     show();
+    if (OnComplete != NULL)
+    {
+      OnComplete(); // call the completion callback
+    }
   }
 
   // Calculate 50% dimmed version of a color (used by ScannerUpdate)
@@ -263,6 +210,7 @@ public:
     for (int i = 0; i < numPixels(); i++)
     {
       setPixelColor(i, color);
+      pattern_pointer[i] = 0;
     }
     show();
   }
@@ -307,6 +255,7 @@ public:
   }
 };
 
+void ProgramComplete();
 NeoPatterns Program(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800, &ProgramComplete);
 
 // Deffine buttons used for program selection
@@ -331,6 +280,63 @@ bool pattern[PIXEL_COUNT];
 int currentOffset = 0;
 bool stopped = true;
 bool paused = false;
+int prevColorRead = 0;
+int prevWait = 0;
+
+void ProgramComplete()
+{
+  Serial.println("Completed");
+  if (pauseButton.update())
+  {
+    if (pauseButton.fallingEdge())
+    {
+      paused = !paused;
+      Serial.println("Paused");
+    }
+  }
+  if (stopButton.update())
+  {
+    if (stopButton.fallingEdge())
+    {
+      Program.ColorSet(Program.Color2);
+      // Program.clear();
+      Program.ActivePattern = NONE;
+      stopped = true;
+    }
+  }
+
+  // Check for color changes
+  int colorIntensity = 0;
+  for (size_t i = 0; i < 32; i++)
+  {
+    colorIntensity += analogRead(1);
+  }
+  colorIntensity = ((colorIntensity / 32) >> 2) - 10;
+  if (colorIntensity != prevColorRead)
+  {
+    Program.Color1 = Program.Color(colorIntensity + 10, 0, 0);
+    prevColorRead = colorIntensity;
+  }
+
+  // Check for speed changes
+  for (size_t i = 0; i < 32; i++)
+  {
+    analogWait += analogRead(0);
+  }
+
+  analogWait = analogWait / 32;
+
+  if (analogWait != prevWait)
+  {
+    Program.Interval = minDelay + analogWait;
+    prevWait = analogWait;
+  }
+  for (size_t i = 0; i < sizeof(Program.pattern_pointer); i++)
+  {
+      Serial.println(Program.pattern_pointer[i]);
+
+  }
+}
 
 void setup()
 {
@@ -348,28 +354,45 @@ void setup()
   pinMode(PAUSE_PIN, INPUT_PULLUP);
   pinMode(STOP_PIN, INPUT_PULLUP);
   Program.begin();
+  Program.Color1 = Program.Color(10,0,0);
+  Program.Color2 = Program.Color(0,0,0);
+  Program.ColorSet(Program.Color2);
+
+  Serial.begin(9800);
 }
 
 void loop()
 {
   if (!paused)
-    Program.Update();
-
-  if (pauseButton.update())
   {
-    if (pauseButton.fallingEdge())
+    Program.Update();
+  }
+  else
+  {
+    if (stopButton.update())
     {
-      paused = !paused;
+      if (stopButton.fallingEdge())
+      {
+        stopped = true;
+        Program.ActivePattern = NONE;
+        Program.ColorSet(Program.Color2);
+      }
     }
   }
-  if (!stopped)
+
+  if (stopped)
   {
+    Serial.println("Stopped");
     // Check for the program to run
     if (program1Button.update())
     {
       if (program1Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM1;
+        Program.FillPattern(2,2);
+        stopped = false;
+        paused = true;
+        Program.Update();
       }
     }
     if (program2Button.update())
@@ -377,6 +400,7 @@ void loop()
       if (program2Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM2;
+        stopped = false;
       }
     }
     if (program3Button.update())
@@ -384,6 +408,7 @@ void loop()
       if (program3Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM3;
+        stopped = false;
       }
     }
     if (program4Button.update())
@@ -391,6 +416,7 @@ void loop()
       if (program4Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM4;
+        stopped = false;
       }
     }
     if (program5Button.update())
@@ -398,6 +424,7 @@ void loop()
       if (program5Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM5;
+        stopped = false;
       }
     }
     if (program6Button.update())
@@ -405,6 +432,7 @@ void loop()
       if (program6Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM6;
+        stopped = false;
       }
     }
     if (program7Button.update())
@@ -412,6 +440,7 @@ void loop()
       if (program7Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM7;
+        stopped = false;
       }
     }
     if (program8Button.update())
@@ -419,6 +448,7 @@ void loop()
       if (program8Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM8;
+        stopped = false;
       }
     }
     if (program9Button.update())
@@ -426,7 +456,16 @@ void loop()
       if (program9Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM9;
+        stopped = false;
       }
+    }
+  }
+  if (pauseButton.update())
+  {
+    if (pauseButton.fallingEdge())
+    {
+      paused = !paused;
+      Serial.println("Paused");
     }
   }
 }
