@@ -2,7 +2,6 @@
 #include <Adafruit_NeoPixel.h>
 #include <Bounce.h>
 
-#define START_PIN 20
 #define PROGRAM_PIN1 2
 #define PROGRAM_PIN2 3
 #define PROGRAM_PIN3 4
@@ -17,7 +16,7 @@
 
 #define PIXEL_PIN 19 // Digital IO pin connected to the NeoPixels.
 
-#define PIXEL_COUNT 8
+#define PIXEL_COUNT 900
 
 // Parameter 1 = number of pixels in strip,  neopixel stick has 8
 // Parameter 2 = pin number (most are valid)
@@ -86,7 +85,7 @@ public:
       switch (ActivePattern)
       {
       case PROGRAM1:
-        Cycle(2, 2);
+        Cycle(36, 36);
         break;
       case PROGRAM2:
         Cycle(48, 36);
@@ -268,7 +267,6 @@ Bounce program6Button = Bounce(PROGRAM_PIN6, 10);
 Bounce program7Button = Bounce(PROGRAM_PIN7, 10);
 Bounce program8Button = Bounce(PROGRAM_PIN8, 10);
 Bounce program9Button = Bounce(PROGRAM_PIN9, 10);
-Bounce startButton = Bounce(START_PIN, 10);
 Bounce pauseButton = Bounce(PAUSE_PIN, 10);
 Bounce stopButton = Bounce(STOP_PIN, 10);
 
@@ -285,13 +283,11 @@ int prevWait = 0;
 
 void ProgramComplete()
 {
-  Serial.println("Completed");
   if (pauseButton.update())
   {
     if (pauseButton.fallingEdge())
     {
       paused = !paused;
-      Serial.println("Paused");
     }
   }
   if (stopButton.update())
@@ -331,17 +327,11 @@ void ProgramComplete()
     Program.Interval = minDelay + analogWait;
     prevWait = analogWait;
   }
-  for (size_t i = 0; i < sizeof(Program.pattern_pointer); i++)
-  {
-      Serial.println(Program.pattern_pointer[i]);
-
-  }
 }
 
 void setup()
 {
   // put your setup code here, to run once:
-  pinMode(START_PIN, INPUT_PULLUP);
   pinMode(PROGRAM_PIN1, INPUT_PULLUP);
   pinMode(PROGRAM_PIN2, INPUT_PULLUP);
   pinMode(PROGRAM_PIN3, INPUT_PULLUP);
@@ -357,8 +347,6 @@ void setup()
   Program.Color1 = Program.Color(10,0,0);
   Program.Color2 = Program.Color(0,0,0);
   Program.ColorSet(Program.Color2);
-
-  Serial.begin(9800);
 }
 
 void loop()
@@ -382,7 +370,6 @@ void loop()
 
   if (stopped)
   {
-    Serial.println("Stopped");
     // Check for the program to run
     if (program1Button.update())
     {
@@ -465,7 +452,6 @@ void loop()
     if (pauseButton.fallingEdge())
     {
       paused = !paused;
-      Serial.println("Paused");
     }
   }
 }
