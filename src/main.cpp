@@ -167,13 +167,26 @@ public:
     }
   }
 
+  void ShowPattern()
+  {
+    for (int j = 0; j < numPixels(); j++)
+    {
+      uint32_t currentColor;
+      if (pattern_pointer[j % numPixels()])
+      {
+        currentColor = Color1;
+      }
+      else
+      {
+        currentColor = Color2;
+      }
+      setPixelColor(j, currentColor);
+    }
+    show();
+  }
   // Cycle through the animation frames
   void Cycle(int pixels, int pixelOffset)
   {
-    // FillPattern(pixels, pixelOffset);
-
-    // First show the pattern without starting the animation until the start button is pressed
-
     for (int j = 0; j < numPixels(); j++)
     {
       uint32_t currentColor;
@@ -279,6 +292,7 @@ int currentOffset = 0;
 bool stopped = true;
 bool paused = false;
 int prevColorRead = 0;
+int colorRead = 10;
 int prevWait = 0;
 
 void ProgramComplete()
@@ -307,11 +321,12 @@ void ProgramComplete()
   {
     colorIntensity += analogRead(1);
   }
-  colorIntensity = ((colorIntensity / 32) >> 2) - 10;
-  if (colorIntensity != prevColorRead)
+  colorRead = ((colorIntensity / 32) >> 2);
+  if (colorRead != prevColorRead)
   {
-    Program.Color1 = Program.Color(colorIntensity + 10, 0, 0);
-    prevColorRead = colorIntensity;
+    Program.Color1 = Program.Color(constrain(colorRead, 10, 250), 0, 0);
+    prevColorRead = colorRead;
+    Serial.println(colorRead);
   }
 
   // Check for speed changes
@@ -344,9 +359,11 @@ void setup()
   pinMode(PAUSE_PIN, INPUT_PULLUP);
   pinMode(STOP_PIN, INPUT_PULLUP);
   Program.begin();
-  Program.Color1 = Program.Color(10,0,0);
-  Program.Color2 = Program.Color(0,0,0);
+  Program.Color1 = Program.Color(10, 0, 0);
+  Program.Color2 = Program.Color(0, 0, 0);
   Program.ColorSet(Program.Color2);
+  Serial.begin(9800);
+  Program.Interval = 1;
 }
 
 void loop()
@@ -376,10 +393,10 @@ void loop()
       if (program1Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM1;
-        Program.FillPattern(2,2);
+        Program.FillPattern(36, 36);
         stopped = false;
         paused = true;
-        Program.Update();
+        Program.ShowPattern();
       }
     }
     if (program2Button.update())
@@ -387,7 +404,10 @@ void loop()
       if (program2Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM2;
+        Program.FillPattern(48, 36);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program3Button.update())
@@ -395,7 +415,10 @@ void loop()
       if (program3Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM3;
+        Program.FillPattern(36, 60);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program4Button.update())
@@ -403,7 +426,10 @@ void loop()
       if (program4Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM4;
+        Program.FillPattern(48, 60);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program5Button.update())
@@ -411,7 +437,10 @@ void loop()
       if (program5Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM5;
+        Program.FillPattern(60, 60);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program6Button.update())
@@ -419,7 +448,10 @@ void loop()
       if (program6Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM6;
+        Program.FillPattern(48, 84);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program7Button.update())
@@ -427,7 +459,10 @@ void loop()
       if (program7Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM7;
+        Program.FillPattern(60, 84);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program8Button.update())
@@ -435,7 +470,10 @@ void loop()
       if (program8Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM8;
+        Program.FillPattern(72, 84);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
     if (program9Button.update())
@@ -443,7 +481,10 @@ void loop()
       if (program9Button.fallingEdge())
       {
         Program.ActivePattern = PROGRAM9;
+        Program.FillPattern(60, 108);
         stopped = false;
+        paused = true;
+        Program.ShowPattern();
       }
     }
   }
