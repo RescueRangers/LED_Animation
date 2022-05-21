@@ -18,13 +18,7 @@
 
 #define PIXEL_COUNT 900
 
-// Parameter 1 = number of pixels in strip,  neopixel stick has 8
-// Parameter 2 = pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
-//   NEO_RGB     Pixels are wired for RGB bitstream
-//   NEO_GRB     Pixels are wired for GRB bitstream, correct for neopixel stick
-//   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
-//   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip), correct for neopixel stick
+
 
 // Pattern types supported:
 enum program
@@ -52,7 +46,6 @@ class NeoPatterns : public Adafruit_NeoPixel
 public:
   // Member Variables:
   program ActivePattern; // which pattern is running
-  direction Direction;   // direction to run the pattern
 
   unsigned long Interval;   // milliseconds between updates
   unsigned long lastUpdate; // last update of position
@@ -208,14 +201,6 @@ public:
     }
   }
 
-  // Calculate 50% dimmed version of a color (used by ScannerUpdate)
-  uint32_t DimColor(uint32_t color)
-  {
-    // Shift R, G and B components one bit to the right
-    uint32_t dimColor = Color(Red(color) >> 1, Green(color) >> 1, Blue(color) >> 1);
-    return dimColor;
-  }
-
   // Set all pixels to a color (synchronously)
   void ColorSet(uint32_t color)
   {
@@ -226,48 +211,17 @@ public:
     }
     show();
   }
-
-  // Returns the Red component of a 32-bit color
-  uint8_t Red(uint32_t color)
-  {
-    return (color >> 16) & 0xFF;
-  }
-
-  // Returns the Green component of a 32-bit color
-  uint8_t Green(uint32_t color)
-  {
-    return (color >> 8) & 0xFF;
-  }
-
-  // Returns the Blue component of a 32-bit color
-  uint8_t Blue(uint32_t color)
-  {
-    return color & 0xFF;
-  }
-
-  // Input a value 0 to 255 to get a color value.
-  // The colours are a transition r - g - b - back to r.
-  uint32_t Wheel(byte WheelPos)
-  {
-    WheelPos = 255 - WheelPos;
-    if (WheelPos < 85)
-    {
-      return Color(255 - WheelPos * 3, 0, WheelPos * 3);
-    }
-    else if (WheelPos < 170)
-    {
-      WheelPos -= 85;
-      return Color(0, WheelPos * 3, 255 - WheelPos * 3);
-    }
-    else
-    {
-      WheelPos -= 170;
-      return Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-    }
-  }
 };
 
 void ProgramComplete();
+
+// Parameter 1 = number of pixels in strip,  neopixel stick has 8
+// Parameter 2 = pin number (most are valid)
+// Parameter 3 = pixel type flags, add together as needed:
+//   NEO_RGB     Pixels are wired for RGB bitstream
+//   NEO_GRB     Pixels are wired for GRB bitstream, correct for neopixel stick
+//   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
+//   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip), correct for neopixel stick
 NeoPatterns Program(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800, &ProgramComplete);
 
 // Deffine buttons used for program selection
