@@ -13,6 +13,7 @@
 #define PROGRAM_PIN9 10
 #define PAUSE_PIN 20
 #define STOP_PIN 12
+#define START_PIN 13
 
 #define PIXEL_PIN 19 // Digital IO pin connected to the NeoPixels.
 
@@ -236,6 +237,9 @@ Bounce program8Button = Bounce(PROGRAM_PIN8, 10);
 Bounce program9Button = Bounce(PROGRAM_PIN9, 10);
 Bounce pauseButton = Bounce(PAUSE_PIN, 10);
 Bounce stopButton = Bounce(STOP_PIN, 10);
+Bounce startButton = Bounce(START_PIN, 10);
+
+program ActiveProgram;
 
 int minDelay = 17;
 int analogWait = 0;
@@ -348,7 +352,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM1;
         Program.FillPattern(36, 36);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -359,7 +362,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM2;
         Program.FillPattern(48, 36);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -370,7 +372,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM3;
         Program.FillPattern(36, 60);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -381,7 +382,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM4;
         Program.FillPattern(48, 60);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -392,7 +392,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM5;
         Program.FillPattern(60, 60);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -403,7 +402,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM6;
         Program.FillPattern(48, 84);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -414,7 +412,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM7;
         Program.FillPattern(60, 84);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -425,7 +422,6 @@ void loop()
       {
         Program.ActivePattern = PROGRAM8;
         Program.FillPattern(72, 84);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
@@ -436,13 +432,24 @@ void loop()
       {
         Program.ActivePattern = PROGRAM9;
         Program.FillPattern(60, 108);
-        stopped = false;
         paused = true;
         Program.ShowPattern();
       }
     }
   }
-  if (pauseButton.update())
+
+  
+  
+  if (startButton.update())
+  {
+    if (startButton.fallingEdge())
+    {
+      paused = false;
+      stopped = false;
+    }
+  }
+
+  if (stopped == false && pauseButton.update())
   {
     if (pauseButton.fallingEdge())
     {
