@@ -13,11 +13,11 @@
 #define PROGRAM_PIN9 10
 #define PAUSE_PIN 20
 #define STOP_PIN 12
-#define START_PIN 13
+#define START_PIN 17
 
 #define PIXEL_PIN 19 // Digital IO pin connected to the NeoPixels.
 
-#define PIXEL_COUNT 900
+#define PIXEL_COUNT 899
 
 
 
@@ -284,7 +284,6 @@ void ProgramComplete()
   {
     Program.Color1 = Program.Color(constrain(colorRead, 10, 250), 0, 0);
     prevColorRead = colorRead;
-    Serial.println(colorRead);
   }
 
   // Check for speed changes
@@ -320,26 +319,20 @@ void setup()
   Program.Color1 = Program.Color(10, 0, 0);
   Program.Color2 = Program.Color(0, 0, 0);
   Program.ColorSet(Program.Color2);
-  Serial.begin(9800);
   Program.Interval = 1;
 }
 
 void loop()
 {
-  if (!paused)
+  
+  if (stopButton.update())
   {
-    Program.Update();
-  }
-  else
-  {
-    if (stopButton.update())
+    if (stopButton.fallingEdge())
     {
-      if (stopButton.fallingEdge())
-      {
-        stopped = true;
-        Program.ActivePattern = NONE;
-        Program.ColorSet(Program.Color2);
-      }
+      stopped = true;
+      paused = true;
+      Program.ActivePattern = NONE;
+      Program.ColorSet(Program.Color2);
     }
   }
 
@@ -438,8 +431,6 @@ void loop()
     }
   }
 
-  
-  
   if (startButton.update())
   {
     if (startButton.fallingEdge())
@@ -455,5 +446,10 @@ void loop()
     {
       paused = !paused;
     }
+  }
+
+  if (!paused)
+  {
+    Program.Update();
   }
 }
