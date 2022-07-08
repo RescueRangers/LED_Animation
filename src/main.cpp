@@ -266,10 +266,10 @@ void ProgramComplete()
   {
     if (stopButton.fallingEdge())
     {
-      Program.ColorSet(Program.Color2);
-      // Program.clear();
-      Program.ActivePattern = NONE;
       stopped = true;
+      paused = true;
+      Program.ActivePattern = NONE;
+      Program.ColorSet(Program.Color2);
     }
   }
 
